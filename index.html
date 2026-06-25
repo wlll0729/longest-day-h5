@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>最长白昼，留给最亲的人</title>
+<style>
+:root {
+  --beige: #F5E6D3;
+  --amber: #D4A574;
+  --brown: #8B6914;
+  --dark: #3E2723;
+  --cream: #FFF8EE;
+  --soft-shadow: 0 2px 16px rgba(139,105,20,0.12);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  font-family: 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  background: var(--cream);
+  color: var(--dark);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+img{max-width:100%;display:block;}
+a{text-decoration:none;color:inherit;}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+button:active{transform:scale(0.97);}
+
+.page{display:none;}
+.page.active,.page.page-entering,.page.page-leaving{display:block;max-width:480px;margin:0 auto;}
+@keyframes pageLeave{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(0.98)}}
+@keyframes pageEnter{0%{opacity:0;transform:scale(0.98)}100%{opacity:1;transform:scale(1)}}
+.page.page-leaving{animation:pageLeave 0.4s ease forwards;pointer-events:none;}
+.page.page-entering{animation:pageEnter 0.5s ease forwards;}
+
+/* Hero */
+.hero{position:relative;width:100%;height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center;background-color:var(--beige);animation:glowPulse 8s ease-in-out infinite;}
+@keyframes glowPulse{0%,100%{background-color:#F5E6D3}50%{background-color:#E8C49A}}
+@keyframes glowRotate{0%{transform:translate(-50%,-50%) rotate(0deg)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
+.hero::after{content:'';position:absolute;top:50%;left:50%;width:200%;height:200%;background:radial-gradient(ellipse at center,rgba(255,220,180,0.3) 0%,transparent 60%);pointer-events:none;z-index:1;animation:glowRotate 20s linear infinite;}
+.hero-bg{position:absolute;inset:0;object-fit:cover;width:100%;height:100%;opacity:0.85;}
+.hero-gradient{position:absolute;inset:0;background:linear-gradient(180deg,rgba(62,39,35,0.45) 0%,rgba(139,105,20,0.3) 50%,rgba(245,230,211,0.6) 100%);}
+.hero-content{position:relative;z-index:2;text-align:center;padding:0 32px;}
+.hero-glow{position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);width:300px;height:160px;background:radial-gradient(ellipse,rgba(255,178,80,0.45) 0%,rgba(212,165,116,0.2) 40%,rgba(212,165,116,0) 70%);animation:glowBreath 3.5s ease-in-out infinite;pointer-events:none;z-index:1;}
+@keyframes glowBreath{0%,100%{opacity:0.4;transform:translate(-50%,-50%) scale(1)}50%{opacity:0.9;transform:translate(-50%,-50%) scale(1.06)}}
+.hero-title{font-size:2.2rem;font-weight:700;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,0.3);letter-spacing:0.06em;line-height:1.3;margin-bottom:16px;animation:titleReveal 1s ease forwards 0.3s;opacity:0;}
+@keyframes titleReveal{0%{opacity:0;letter-spacing:0.2em;transform:translateY(8px)}100%{opacity:1;letter-spacing:0.06em;transform:translateY(0)}}
+.hero-date{font-size:1rem;color:rgba(255,255,255,0.85);letter-spacing:0.08em;}
+.hero-hint{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.7);font-size:0.8rem;animation:bounceDown 2s infinite;z-index:2;}
+@keyframes bounceDown{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
+
+/* Manifesto */
+.manifesto{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:48px 28px;text-align:center;background:linear-gradient(180deg,var(--beige) 0%,var(--cream) 100%);}
+.manifesto-text{font-size:1.5rem;font-weight:600;color:var(--brown);line-height:2.2;letter-spacing:0.04em;max-width:360px;}
+.manifesto-text em{display:block;font-size:2rem;font-style:normal;margin-top:8px;color:var(--dark);}
+
+/* Story Stream */
+.story-stream{padding:0 0 48px;background:var(--cream);}
+.filter-sticky{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,var(--cream) 60%,rgba(255,248,238,0.92) 100%);padding:12px 0 8px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+.filter-scroll{display:flex;gap:8px;padding:0 16px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.filter-scroll::-webkit-scrollbar{display:none;}
+.filter-chip{flex-shrink:0;padding:8px 16px;border-radius:20px;font-size:0.85rem;font-weight:500;background:#fff;color:var(--brown);border:1.5px solid var(--beige);cursor:pointer;transition:var(--transition);white-space:nowrap;}
+.filter-chip.active{background:var(--brown);color:#fff;border-color:var(--brown);}
+.chip-count{font-size:0.7rem;margin-left:2px;opacity:0.7;}
+
+.story-cards{padding:16px 16px 0;}
+
+/* Scroll reveal */
+.scroll-reveal{opacity:0;transform:translateY(24px);transition:opacity 0.65s ease,transform 0.65s ease;}
+.scroll-reveal.visible{opacity:1;transform:translateY(0);}
+
+/* Staggered card entrance */
+.story-card-enter{animation:fadeInUp 0.45s ease forwards;opacity:0;}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.story-card{background:#fff;border-radius:var(--radius);overflow:hidden;margin-bottom:16px;box-shadow:var(--soft-shadow);cursor:pointer;transition:transform 0.3s ease,box-shadow 0.3s ease;}
+.story-card:active{transform:scale(0.98);}
+@media (hover:hover){.story-card:hover{transform:translateY(-4px);box-shadow:0 8px 28px rgba(139,105,20,0.18);}}
+@media (hover:hover){.story-card:hover .card-thumb{transform:scale(1.05);}}
+.card-thumb{width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--beige);transition:transform 0.3s ease;}
+.card-body{padding:16px;}
+.card-category{font-size:0.75rem;color:var(--amber);font-weight:500;margin-bottom:4px;}
+.card-title{font-size:1.1rem;font-weight:600;color:var(--dark);margin-bottom:6px;line-height:1.4;}
+.card-summary{font-size:0.85rem;color:#888;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5;margin-bottom:6px;}
+.card-emotion{font-size:0.82rem;color:var(--amber);font-style:italic;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+
+/* Data Wall */
+.data-wall{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px;text-align:center;background:linear-gradient(180deg,var(--cream) 0%,var(--beige) 100%);}
+.data-wall h3{font-size:1.3rem;color:var(--brown);margin-bottom:32px;font-weight:600;letter-spacing:0.04em;}
+.data-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%;max-width:340px;}
+.data-item{background:#fff;border-radius:var(--radius);padding:28px 16px;box-shadow:var(--soft-shadow);}
+.data-num{font-size:2rem;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums;}
+.data-label{font-size:0.8rem;color:#999;margin-top:6px;}
+
+/* Footer */
+.footer-section{display:flex;align-items:center;justify-content:center;gap:20px;padding:40px 28px;background:var(--beige);}
+.footer-btn{padding:14px 32px;border-radius:28px;font-size:1rem;font-weight:600;border:none;cursor:pointer;transition:var(--transition);}
+.footer-btn.primary{background:var(--brown);color:#fff;box-shadow:0 4px 16px rgba(139,105,20,0.3);}
+.footer-btn.primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(139,105,20,0.4);}
+.footer-btn.secondary{background:#fff;color:var(--brown);border:1.5px solid var(--amber);}
+.footer-btn.secondary:hover{background:var(--cream);}
+
+/* Back Arrow */
+.back-arrow{position:fixed;top:16px;left:16px;z-index:100;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--dark);cursor:pointer;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.12);}
+
+/* P2 Detail */
+.detail-act{position:relative;width:100%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;}
+.detail-act-bg{position:absolute;inset:0;object-fit:cover;width:100%;height:100%;opacity:0.55;}
+.detail-act-gradient{position:absolute;inset:0;background:linear-gradient(0deg,rgba(62,39,35,0.55) 0%,rgba(62,39,35,0.15) 40%,rgba(62,39,35,0.0) 70%);}
+.detail-act-watercolor{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;background:linear-gradient(160deg,rgba(212,165,116,0.28) 0%,rgba(139,105,20,0.12) 35%,rgba(62,39,35,0.06) 60%,rgba(245,230,211,0.08) 100%);animation:watercolorIn 1.4s ease-out forwards;}
+@keyframes watercolorIn{0%{opacity:0;filter:blur(4px)}100%{opacity:1;filter:blur(0)}}
+.detail-act-content{position:relative;z-index:2;padding:32px 28px 64px;max-width:420px;text-align:center;margin-top:auto;}
+.detail-act-label{font-size:0.75rem;color:rgba(255,255,255,0.7);letter-spacing:0.08em;margin-bottom:12px;text-transform:uppercase;}
+.detail-act-title{font-size:1.4rem;font-weight:700;color:#fff;margin-bottom:16px;line-height:1.4;text-shadow:0 1px 8px rgba(0,0,0,0.3);}
+.detail-act-text{font-size:0.95rem;color:rgba(255,255,255,0.92);line-height:2;text-shadow:0 1px 4px rgba(0,0,0,0.2);}
+
+/* Act3 Object */
+.detail-act3-obj{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:64px 28px;position:relative;background:linear-gradient(180deg,var(--cream) 0%,#fff 100%);}
+.act3-obj-img{width:220px;height:220px;object-fit:cover;border-radius:20px;box-shadow:0 8px 32px rgba(139,105,20,0.15);margin-bottom:28px;}
+.act3-obj-text{font-size:0.95rem;color:var(--dark);text-align:center;max-width:320px;line-height:1.8;margin-bottom:24px;}
+.act3-sentence{font-size:1.15rem;color:var(--brown);font-weight:600;text-align:center;margin-bottom:24px;line-height:1.6;max-width:320px;}
+.act3-expand-btn{display:inline-flex;align-items:center;gap:6px;padding:12px 24px;border-radius:24px;background:var(--amber);color:#fff;font-size:0.95rem;font-weight:600;border:none;cursor:pointer;transition:var(--transition);box-shadow:0 4px 12px rgba(212,165,116,0.3);}
+
+/* Expand Layer */
+.expand-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0);pointer-events:none;opacity:0;transition:background 0.35s cubic-bezier(0.32,0.72,0,1),opacity 0.35s,backdrop-filter 0.35s;-webkit-backdrop-filter:blur(0px);backdrop-filter:blur(0px);}
+.expand-overlay.active{background:rgba(0,0,0,0.4);opacity:1;pointer-events:auto;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
+.expand-panel{width:100%;max-width:480px;background:#fff;border-radius:20px 20px 0 0;padding:32px 24px 48px;transform:translateY(100%) scale(0.95);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);position:relative;max-height:85vh;overflow-y:auto;}
+.expand-overlay.active .expand-panel{transform:translateY(0) scale(1);}
+.expand-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;font-size:1.2rem;border:none;cursor:pointer;color:#999;}
+.expand-obj-img{width:160px;height:160px;object-fit:cover;border-radius:16px;margin:0 auto 20px;display:block;}
+.expand-sentence{font-size:1.15rem;color:var(--brown);font-weight:600;text-align:center;margin-bottom:12px;line-height:1.6;}
+.expand-price{font-size:1.5rem;color:var(--amber);font-weight:700;text-align:center;margin-bottom:24px;}
+.expand-jd-btn{display:block;width:100%;padding:14px;border-radius:24px;background:var(--brown);color:#fff;font-size:1rem;font-weight:600;text-align:center;border:none;cursor:pointer;}
+@keyframes expandFadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.expand-overlay.active .expand-panel>*{animation:expandFadeIn 0.4s ease forwards;opacity:0;}
+.expand-overlay.active .expand-panel>:nth-child(1){animation-delay:0.05s;}
+.expand-overlay.active .expand-panel>:nth-child(2){animation-delay:0.15s;}
+.expand-overlay.active .expand-panel>:nth-child(3){animation-delay:0.25s;}
+.expand-overlay.active .expand-panel>:nth-child(4){animation-delay:0.35s;}
+.expand-overlay.active .expand-panel>:nth-child(5){animation-delay:0.45s;}
+@keyframes cardFadeOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(0.95)}}
+.card-fade-out{animation:cardFadeOut 0.3s ease forwards;pointer-events:none;}
+
+/* Bottom section */
+.detail-bottom{padding:32px 16px 64px;background:var(--cream);}
+.detail-bottom h4{font-size:1rem;color:var(--brown);font-weight:600;margin-bottom:12px;}
+.comment-item{background:#fff;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.04);}
+.comment-nick{font-size:0.8rem;color:var(--amber);font-weight:500;}
+.comment-text{font-size:0.85rem;color:#555;margin-top:4px;line-height:1.5;}
+.related-scroll{display:flex;gap:12px;overflow-x:auto;padding:8px 0 16px;scroll-snap-type:x mandatory;}
+.related-card{flex-shrink:0;width:140px;background:#fff;border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--soft-shadow);cursor:pointer;scroll-snap-align:start;}
+.related-card-img{width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--beige);}
+.related-card-title{font-size:0.8rem;padding:8px 10px;line-height:1.3;color:var(--dark);}
+.share-btn-row{display:flex;justify-content:center;padding:20px 0;}
+.share-btn{padding:12px 32px;border-radius:24px;background:var(--amber);color:#fff;font-size:0.95rem;font-weight:600;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(212,165,116,0.3);}
+
+/* P3 Message Wall */
+.message-wall{padding:60px 12px 48px;min-height:100vh;background:var(--cream);}
+.message-wall h3{text-align:center;font-size:1.2rem;color:var(--brown);margin-bottom:24px;font-weight:600;}
+.waterfall{columns:2;column-gap:12px;}
+.msg-card{break-inside:avoid;background:#fff;border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;box-shadow:0 1px 8px rgba(0,0,0,0.05);}
+.msg-tag{font-size:0.7rem;color:var(--amber);background:rgba(212,165,116,0.1);display:inline-block;padding:2px 8px;border-radius:10px;margin-bottom:6px;}
+.msg-text{font-size:0.85rem;color:var(--dark);line-height:1.6;margin-bottom:6px;}
+.msg-from{font-size:0.7rem;color:#bbb;}
+
+/* P4 UGC Form */
+.ugc-form-page{padding:60px 24px 48px;max-width:480px;margin:0 auto;min-height:100vh;background:var(--cream);}
+.ugc-form-page h3{text-align:center;font-size:1.2rem;color:var(--brown);margin-bottom:28px;font-weight:600;}
+.form-group{margin-bottom:20px;}
+.form-group label{display:block;font-size:0.85rem;color:var(--brown);font-weight:500;margin-bottom:8px;}
+.cat-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.cat-option{padding:8px 14px;border-radius:18px;font-size:0.8rem;background:#fff;color:var(--brown);border:1.5px solid var(--beige);cursor:pointer;transition:var(--transition);}
+.cat-option.selected{background:var(--brown);color:#fff;border-color:var(--brown);}
+.form-input{width:100%;padding:12px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--beige);background:#fff;font-size:0.9rem;color:var(--dark);outline:none;transition:var(--transition);font-family:inherit;resize:vertical;min-height:80px;}
+.form-input:focus{border-color:var(--amber);}
+.form-input.small{min-height:44px;}
+.form-hint{font-size:0.75rem;color:#bbb;margin-top:4px;text-align:center;}
+.submit-btn{display:block;width:100%;padding:14px;border-radius:24px;background:var(--brown);color:#fff;font-size:1rem;font-weight:600;border:none;cursor:pointer;transition:var(--transition);margin-top:8px;box-shadow:0 4px 12px rgba(139,105,20,0.2);}
+.submit-success{display:none;text-align:center;padding:48px 28px;}
+.submit-success.active{display:block;}
+.submit-success h4{font-size:1.3rem;color:var(--brown);margin-bottom:8px;}
+
+/* P5 Share Card */
+.share-overlay{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0);padding:24px;pointer-events:none;opacity:0;transition:background 0.35s,opacity 0.35s;}
+.share-overlay.active{background:rgba(0,0,0,0.6);opacity:1;pointer-events:auto;}
+@keyframes shareSpring{0%{transform:scale(0.8);opacity:0}60%{transform:scale(1.03);opacity:1}100%{transform:scale(1);opacity:1}}
+.share-overlay.active .share-card{animation:shareSpring 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;}
+.share-card{width:280px;aspect-ratio:4/5;background:#fff;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.25);position:relative;}
+.share-card-img{width:100%;flex:1;object-fit:cover;background:var(--beige);min-height:0;}
+.share-card-body{padding:12px 16px 8px;text-align:center;}
+.share-card-title{font-size:0.95rem;font-weight:600;color:var(--dark);margin-bottom:4px;}
+.share-card-desc{font-size:0.75rem;color:#999;margin-bottom:6px;}
+.share-divider{width:40px;height:2px;background:var(--amber);margin:0 auto 6px;}
+.share-branding{font-size:0.72rem;color:#bbb;margin-bottom:2px;}
+.share-jd-text{font-size:0.65rem;color:var(--amber);margin-bottom:6px;}
+.share-actions{display:flex;gap:10px;padding:0 16px 16px;justify-content:center;}
+.share-save-btn,.share-share-btn{flex:1;padding:8px 0;border-radius:20px;font-size:0.78rem;font-weight:600;border:none;cursor:pointer;transition:var(--transition);}
+.share-save-btn{background:var(--beige);color:var(--brown);}
+.share-share-btn{background:var(--brown);color:#fff;}
+.share-close-btn{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,0.45);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1rem;border:none;cursor:pointer;z-index:1;}
+.share-close-outside{display:none;color:#fff;font-size:0.85rem;margin-top:16px;cursor:pointer;opacity:0.7;}
+
+/* Toast */
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.8);background:rgba(62,39,35,0.9);color:#fff;padding:12px 24px;border-radius:24px;font-size:0.9rem;z-index:999;opacity:0;pointer-events:none;transition:opacity 0.25s,transform 0.25s;}
+.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+</style>
+</head>
+<body>
+
+<!-- ═══ P1: Home ═══ -->
+<div class="page active" id="page-home">
+  <section class="hero">
+    <img class="hero-bg" src="assets/images/types/肩背型/story1_act1_fireworks.png" alt="" onerror="this.style.display='none'">
+    <div class="hero-gradient"></div>
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <h1 class="hero-title">最长白昼<br>留给最亲的人</h1>
+      <p class="hero-date">2026.6.21 夏至·父亲节</p>
+    </div>
+    <div class="hero-hint">向下滑动</div>
+  </section>
+
+  <section class="manifesto">
+    <div class="manifesto-text scroll-reveal">
+      时间最多的一天<br>
+      恰恰是陪伴最少的一天<br>
+      <em>最长白昼<br>留给最亲的人</em>
+    </div>
+  </section>
+
+  <section class="story-stream">
+    <div class="filter-sticky">
+      <div class="filter-scroll" id="filter-bar"></div>
+    </div>
+    <div class="story-cards" id="story-cards"></div>
+  </section>
+
+  <section class="data-wall">
+    <h3>24个家庭 · 8种父亲</h3>
+    <div class="data-grid">
+      <div class="data-item scroll-reveal"><div class="data-num" id="counter-views" data-target="12847">0</div><div class="data-label">次阅读</div></div>
+      <div class="data-item scroll-reveal"><div class="data-num" id="counter-messages" data-target="864">0</div><div class="data-label">条留言</div></div>
+      <div class="data-item scroll-reveal"><div class="data-num" data-target="5">0</div><div class="data-label">座城市</div></div>
+      <div class="data-item scroll-reveal"><div class="data-num" data-target="24">0</div><div class="data-label">个故事</div></div>
+    </div>
+  </section>
+
+  <section class="footer-section">
+    <button class="footer-btn primary" id="btn-write-story">写我的故事</button>
+    <button class="footer-btn secondary" id="btn-message-wall">留言墙</button>
+  </section>
+</div>
+
+<!-- ═══ P2: Story Detail ═══ -->
+<div class="page" id="page-detail">
+  <button class="back-arrow" id="btn-back-detail">←</button>
+  <div id="detail-screen"></div>
+  <div class="detail-bottom" id="detail-bottom"></div>
+</div>
+
+<!-- ═══ P3: Message Wall ═══ -->
+<div class="page" id="page-messages">
+  <button class="back-arrow" id="btn-back-messages">←</button>
+  <div class="message-wall">
+    <h3>留言墙</h3>
+    <div class="waterfall" id="waterfall"></div>
+  </div>
+</div>
+
+<!-- ═══ P4: UGC Form ═══ -->
+<div class="page" id="page-ugc">
+  <button class="back-arrow" id="btn-back-ugc">←</button>
+  <div class="ugc-form-page">
+    <h3>写下你与父亲的故事</h3>
+    <div class="form-group"><label>父亲类型</label><div class="cat-grid" id="cat-selector"></div></div>
+    <div class="form-group"><label>童年记忆</label><textarea class="form-input" id="ugc-act1" placeholder="还记得小时候父亲为你做过什么吗？"></textarea></div>
+    <div class="form-group"><label>现在的变化</label><textarea class="form-input" id="ugc-act2" placeholder="你最近一次见到父亲，发现了什么变化？"></textarea></div>
+    <div class="form-group"><label>那个物件</label><textarea class="form-input" id="ugc-act3" placeholder="有没有一个物件，让你想起父亲？"></textarea></div>
+    <div class="form-group"><label>你的昵称</label><input class="form-input small" id="ugc-nick" placeholder="让大家知道你是谁" maxlength="16"></div>
+    <p class="form-hint">以上三个回忆，填写任意一个即可提交</p>
+    <button class="submit-btn" id="btn-submit-ugc">提交故事</button>
+    <div class="submit-success" id="submit-success"><h4>你的故事已收到</h4><p style="color:#999;margin-top:8px;">感谢你分享这份珍贵的回忆</p></div>
+  </div>
+</div>
+
+<!-- ═══ P5 Share Card Overlay + Expand Layer + Toast ═══ -->
+<div class="expand-overlay" id="expand-overlay">
+  <div class="expand-panel" id="expand-panel"></div>
+</div>
+<div class="share-overlay" id="share-overlay">
+  <div class="share-card" id="share-card">
+    <button class="share-close-btn" onclick="closeShare()">×</button>
+    <img class="share-card-img" id="share-img" src="" alt="">
+    <div class="share-card-body">
+      <div class="share-card-title" id="share-title"></div>
+      <div class="share-card-desc" id="share-desc"></div>
+    </div>
+    <div class="share-divider"></div>
+    <div class="share-branding">最长白昼，留给最亲的人</div>
+    <div class="share-jd-text">京东</div>
+    <div class="share-actions">
+      <button class="share-save-btn" onclick="saveShareCard()">保存图片</button>
+      <button class="share-share-btn" onclick="shareToFriend()">分享给朋友</button>
+    </div>
+  </div>
+  <div class="share-close-outside" onclick="closeShare()">点击关闭</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="images_embedded.js"></script>
+<script>
+// Set hero background from embedded images
+document.addEventListener('DOMContentLoaded', function(){
+  var hero = document.querySelector('.hero-bg');
+  if (hero && IMAGES['肩背型/story1_act1_fireworks']) {
+    hero.src = IMAGES['肩背型/story1_act1_fireworks'];
+  }
+});
+</script>
+<script>
+'use strict';
+// ═══════════════ STORIES DATA ═══════════════
+var CATEGORIES = [
+  {id:'肩背型',name:'肩背型'},{id:'手艺型',name:'手艺型'},{id:'接送型',name:'接送型'},
+  {id:'厨房型',name:'厨房型'},{id:'沉默型',name:'沉默型'},{id:'让步型',name:'让步型'},
+  {id:'等待型',name:'等待型'},{id:'转身型',name:'转身型'}
+];
+var STORIES = [
+{id:1,cat:'肩背型',snum:1,img:{a1:'肩背型/story1_act1_fireworks',a2:'肩背型/story1_act2_sofa',a3:'肩背型/story1_act3_pillow'},title1:'骑肩看烟花',title2:'他坐下去要扶着腰',a1:'每年除夕他扛着我，挤在镇口看烟花。我骑在他肩上，比所有人都高。他两只手托着我的腿，仰头喊："看没看到？"',a2:'去年回家，他坐沙发时要先扶着腰，慢慢往下挨。他看我看着他，说："没事，老毛病。"',a3:'他看电视的时候，腰后面塞着一个用久了的枕头，压得变了形，托不住腰。',sentence:'他扛了你二十年。现在他坐下去的时候，要扶着腰。',product:'护腰靠垫',price:'¥99-199'},
+{id:2,cat:'肩背型',snum:2,img:{a1:'肩背型/story2_act1_flood',a2:'肩背型/story2_act2_stairs',a3:'肩背型/story2_act3_knee_warmer'},title1:'背我淌水',title2:'爬三楼要扶栏杆',a1:'那年暴雨淹了学校门口的路。他蹲下来说"上来"，背着我走进水里。水面没过他膝盖，他一只手托着我，另一只手扶着墙探路。',a2:'他现在爬三楼要扶着栏杆，到平台撑一下膝盖才继续走。上个月降温，他的膝盖肿了一圈。',a3:'电热护膝放在床头柜抽屉里，线的接口断了，他用黑色电工胶布缠了三圈。',sentence:'他背着你蹚过了整个雨季。现在他弯不下腰，够不到自己的脚踝。',product:'电热护膝',price:'¥129-229'},
+{id:3,cat:'肩背型',snum:3,img:{a1:'肩背型/story3_act1_train',a2:'肩背型/story3_act2_hospital',a3:'肩背型/story3_act3_pillow'},title1:'扛着追火车',title2:'颈椎再也抬不起来',a1:'每个周末傍晚他扛着我走到铁路道口。他让我骑在他肩上，火车开过来的时候，他指着窗口说"看，有人"。铁轨震动从脚底传到头顶。',a2:'他颈椎增生，抬头看高处的东西要整个身体转过去。去年拍CT，医生说他第三节到第五节椎间盘突出。',a3:'U型颈椎枕放在枕头旁边，决明子和中药包填的，枕面上有一片磨亮了的印子。',sentence:'他让你骑在脖子上追火车，看这世界最远的风景。现在他的颈椎再也抬不起来了。',product:'U型颈椎枕',price:'¥49-99'},
+{id:4,cat:'手艺型',snum:1,img:{a1:'手艺型/story1_act1_bike',a2:'手艺型/story1_act2_sink',a3:'手艺型/story1_act3_handcream'},title1:'修自行车',title2:'手使不上劲了',a1:'星期六早上他把我的自行车翻过来，轮子朝天。他用扳手拧链条，手指沾满了黑油。我蹲在旁边递螺丝刀，他接过去的时候在我手背上蹭了一道黑印。',a2:'上个月他帮我装新书架，拧了三个螺丝就去洗手。他说："手使不上劲了。"他洗了很久，指甲缝里还有灰。',a3:'洗手台上有一支护手霜，他每天涂两次。以前他的手从来不裂。',sentence:'他的手修了二十年的车，现在裂得拿不住螺丝刀。',product:'护手霜',price:'¥39-89'},
+{id:5,cat:'手艺型',snum:2,img:{a1:'手艺型/story2_act1_solder',a2:'手艺型/story2_act2_lamp',a3:'手艺型/story2_act3_glasses'},title1:'修电器',title2:'眼睛花了看不清',a1:'电风扇不转了，他把外壳拆开，用万用表测线路。我趴在茶几上看，他指着电容说："就它坏了。"他焊了一个新的上去，风扇转了。',a2:'上周末他修一个台灯，眯着眼睛看了半天电路板。焊点歪歪扭扭的，有两个连在一起了。他说："眼睛花了，看不清楚。"',a3:'他桌上放着一副老花镜，镜片上有一道划痕，他没换。',sentence:'他焊了一辈子电路，现在看不清焊点了。',product:'老花镜',price:'¥99-299'},
+{id:6,cat:'手艺型',snum:3,img:{a1:'手艺型/story3_act1_toy',a2:'手艺型/story3_act2_outlet',a3:'手艺型/story3_act3_glasses2'},title1:'老花镜',title2:'东西找不着了',a1:'遥控车撞到墙脚，天线齐根断掉。他从抽屉里翻出烙铁，让我扶着车壳，他把断口对齐，烙铁尖点上去，焊锡化开。我闻着松香的气味。',a2:'上个月他说电饭煲插头松了，拿着螺丝刀蹲了半天。他拿错了螺丝刀头。我说爸你用错头了，他手抖了两下才对准。',a3:'他的老花镜放在茶几上，镜片上全是细密的划痕。他又配了一副新的，但出门总忘带。有一次我帮他找，他从裤子口袋里摸出来，镜腿已经歪了。',sentence:'他的眼睛花了，东西也找不着了，但工具从没放错过位置。',product:'老花镜',price:'¥99-299'},
+{id:7,cat:'接送型',snum:1,img:{a1:'接送型/story1_act1_rain',a2:'接送型/story1_act2_knee',a3:'接送型/story1_act3_kneepad'},title1:'旧自行车',title2:'膝盖知道每一场雨',a1:'下雨天他骑自行车送我上学。雨衣披在我身上，他的后背全湿了。到校门口他把雨衣脱下来，雨水从袖口往下滴。他把书包递给我，说"快去"。',a2:'他的膝盖肿了，走路时右腿拖在后面。天气预报说降温那天，他用热水袋敷了一晚上，第二天还是肿。',a3:'护膝内侧有一块磨出来的毛边，他用针线缝过。系带的橡皮筋断了，打了三个结才能系紧。',sentence:'他的膝盖知道每一场雨什么时候来。',product:'护膝',price:'¥59-159'},
+{id:8,cat:'接送型',snum:2,img:{a1:'接送型/story2_act1_car',a2:'接送型/story2_act2_notebook',a3:'接送型/story2_act3_bpmeter'},title1:'后视镜',title2:'记了六年血压',a1:'他每天五点半起来送我上学。我坐在后座，能看到后视镜里他的眼睛。他偶尔从镜子里看我一眼，什么都不说。',a2:'他倒车入库四把才进去。上次体检血压160，医生开了降压药。他在本子上记每天的血压，一格一格填。',a3:'血压计放在床头柜上，旁边一个旧本子，密密麻麻记了六年的数字。',sentence:'他记了六年血压，比当年送我上学还准时。',product:'血压计',price:'¥199-399'},
+{id:9,cat:'接送型',snum:3,img:{a1:'接送型/story3_act1_motorcycle',a2:'接送型/story3_act2_thermos',a3:'接送型/story3_act3_thermos'},title1:'保温杯',title2:'手没劲了',a1:'冬天他骑摩托送我上学。到了校门口，他从大衣口袋掏出一个保温杯，拧开盖子递给我，说"喝一口再进去"。水是温的。',a2:'现在他穿三件衣服还是缩着脖子。我给他买了新保温杯，他不肯用。他接水的时候让我帮他拧杯盖，说"手没劲"。',a3:'旧保温杯底下的漆磨掉了一块，内壁有茶垢洗不掉。盖子拧紧的时候会滑丝半圈。',sentence:'他的保温杯比任何天气预报都灵。',product:'保温杯',price:'¥79-199'},
+{id:10,cat:'厨房型',snum:1,img:{a1:'厨房型/story1_act1_dawn',a2:'厨房型/story1_act2_stove',a3:'厨房型/story1_act3_smartstove'},title1:'智能灶',title2:'站在厨房很久',a1:'凌晨四点半，厨房灯亮了。他把五花肉切成四方块，每一块都码得整整齐齐。他的红烧肉够全班同学吃一筷子。',a2:'上周末他炖排骨，闻到焦味才想起来。锅底已经黑了，排骨黏在锅底铲不下来。邻居帮忙换了台智能灶，能定时，能自动关火。',a3:'智能灶的屏幕亮着蓝光，他站在灶前，食指悬在按键上方，停了两秒才按下去。手机上经常跳出提醒。他看了把手机翻过去扣在桌上。',sentence:'邻居帮他装好的那天，他在厨房站了很久，盯着那片蓝光看了半天，没碰任何一个键。',product:'智能灶',price:'¥1,299-2,999'},
+{id:11,cat:'厨房型',snum:2,img:{a1:'厨房型/story2_act1_noodles',a2:'厨房型/story2_act2_boil',a3:'厨房型/story2_act3_timer'},title1:'定时器',title2:'始终没听到响过',a1:'每个周六下午，他在厨房擀面。面粉扑在他旧T恤上，他用手背擦一下鼻子。面团在他手下慢慢摊开，再叠起来再擀，直到面皮薄得透光。',a2:'他现在做不动手擀面了。手有时候抖得厉害，开水溅到灶台上，他往后退一步，等水花小了再凑过去。',a3:'灶台边上多了一个白色的定时器。他煮面时拧到六分钟，有时候拧了忘了按开始。有一次面条煮烂了，他站在锅前，看了看定时器，又看了看锅里糊成一团的面，没说话。',sentence:'那个定时器他拧了又拧，始终没听到它响过一声。',product:'厨房定时器',price:'¥29-69'},
+{id:12,cat:'厨房型',snum:3,img:{a1:'厨房型/story3_act1_fishmarket',a2:'厨房型/story3_act2_fridge',a3:'厨房型/story3_act3_cooker'},title1:'电炖锅',title2:'听了三小时',a1:'每个周末早上，他去菜市场挑活鱼。他在鱼摊前蹲下来，盯着水箱看半天，挑那条最精神的。鱼腹肉最好，总是夹到我碗里。',a2:'他不再去菜市场了。冰箱冷冻格里放着冷冻鱼片。他拿出来解冻，鱼肉炖出来又柴又散，他自己吃完了。',a3:'厨房角落里多了一个电炖锅。排骨汤定时三小时，他每隔半小时就掀开盖子看一眼。后来他不掀盖子了，就在沙发上坐着，耳朵听着厨房里咕嘟咕嘟的声音。',sentence:'他以前挑活鱼，一眼就知道新不新鲜。现在听一锅汤的声音，听了三小时。',product:'电炖锅',price:'¥199-399'},
+{id:13,cat:'沉默型',snum:1,img:{a1:'沉默型/story1_act1_bike',a2:'沉默型/story1_act2_darkroom',a3:'沉默型/story1_act3_smartlight'},title1:'智能灯',title2:'没有去够开关',a1:'他蹲在院子里修自行车，链条断了，他光着手把油污的链条一节一节接回去。修完他拍两下坐垫，站起来洗手。',a2:'退休后他每天下午坐阳台那把藤椅上，膝盖上摊着报纸，翻过来折过去，一坐坐到天黑。',a3:'客厅天花板上装了一盏智能灯，带定时开关。他从没用过手机控制的功能。每天晚上他伸手去够——够了个空。那盏灯没有灯绳。',sentence:'他坐在黑暗里，没有去够开关。',product:'智能灯',price:'¥99-199'},
+{id:14,cat:'沉默型',snum:2,img:{a1:'沉默型/story2_act1_sofa',a2:'沉默型/story2_act2_teatable',a3:'沉默型/story2_act3_speaker'},title1:'音箱',title2:'只够他自己听',a1:'中考那年我考了年级第三，回家把成绩单放在茶几上。他看了一眼，起身去厨房倒了杯水，放在我手边。杯子很烫，我没端。',a2:'他退休后开始喝茶，每天晚饭后一个人泡、一个人喝。偶尔我坐到他对面，他就多洗一个杯子，推过来，不说"喝"也不说"尝尝"。',a3:'电视柜旁边多了一个小音箱。他偶尔打开，放一段京剧。声音调得很低，低到站在门口听不清唱的是什么。他坐在沙发上，一只手指跟着板眼轻轻拍。',sentence:'他把声音调得很低，低到只够他自己听。',product:'智能音箱',price:'¥199-499'},
+{id:15,cat:'沉默型',snum:3,img:{a1:'沉默型/story3_act1_radio',a2:'沉默型/story3_act2_dust',a3:'沉默型/story3_act3_desklamp'},title1:'护眼台灯',title2:'他坐在中间',a1:'我喜欢听广播里的评书，偷偷把他那台老收音机的音量拧到最大。他推门进来，没骂我，走过去把音量拧到刚好能听清的位置。评书播完他才起身关了灯。',a2:'他买了一台智能音箱，有一天突然问我怎么用。他喊了两嗓子调不出声音，就再也不碰了。音箱立在电视柜上落了一层灰。',a3:'我给他买了一盏护眼台灯，LED的，能调亮度调色温。他拆开包装看了看，又装回去，放进了衣柜最顶层的抽屉里。晚上他还是开那盏旧灯，昏黄的光照着半间屋子。',sentence:'新台灯在抽屉里，旧灯在天花板上，他坐在中间。',product:'护眼台灯',price:'¥129-299'},
+{id:16,cat:'让步型',snum:1,img:{a1:'让步型/story1_act1_desk',a2:'让步型/story1_act2_fishing',a3:'让步型/story1_act3_fishingrod'},title1:'钓鱼竿',title2:'没能抵达的远方',a1:'深圳分公司的调令下来那年，他三十五岁。我妈说那边发展好，他拿着文件看了一晚上。第二天他把调令锁进抽屉，说"孩子还小，不去了"。',a2:'退休后他买了一套钓具，周末去河边钓鱼，早上六点出门，中午回来，钓到的鱼都放了。他说"就是坐坐"。',a3:'渔具包挂在阳台上，拉链拉不严了，鱼竿的把手露在外面。',sentence:'他没能抵达的远方，都铺成了我脚下的路。',product:'钓鱼竿套装',price:'¥199-599'},
+{id:17,cat:'让步型',snum:2,img:{a1:'让步型/story2_act1_cabinet',a2:'让步型/story2_act2_camera',a3:'让步型/story2_act3_camera'},title1:'相机',title2:'修不好了',a1:'他年轻时想当摄影师，攒了两年工资买了一台海鸥相机。后来我妈怀孕了，他把相机锁进柜子，再没拿出来过。他说"拍照养不活人"。',a2:'去年搬家翻出那台相机，皮套发霉了，快门按不下去。他对着取景器看了一下，里面什么都看不见。他把相机放回箱子，说"修不好了"。',a3:'相机锁在柜子里，旁边是一卷没拍完的胶卷。生产日期1997年。',sentence:'他锁起来的那台相机里，装着他全部的青春，和全部的我。',product:'数码相机',price:'¥1,999-3,999'},
+{id:18,cat:'让步型',snum:3,img:{a1:'让步型/story3_act1_guitar',a2:'让步型/story3_act2_street',a3:'让步型/story3_act3_guitar'},title1:'吉他',title2:'换了一个旋律',a1:'他年轻时有乐队梦，跟朋友组过一支，排练到凌晨。后来我出生了，他把吉他卖了。我说过"你不一定非要卖"，他说"反正也弹不好"。',a2:'退休后他在地铁口看到街边弹唱的人，站了十分钟。晚上他在手机上搜"成人吉他入门"，看了一会儿，又关掉了。',a3:'墙角立着一把新吉他，我给他买的。弦已经调好了，他每天拿布擦一遍，没弹过。',sentence:'有些人把琴收进柜子，不是放弃了音乐，而是换了一个旋律，叫作"柴米油盐"。',product:'民谣吉他',price:'¥599-1,999'},
+{id:19,cat:'等待型',snum:1,img:{a1:'等待型/story1_act1_lamp',a2:'等待型/story1_act2_phone',a3:'等待型/story1_act3_lamp'},title1:'台灯',title2:'开关被按出了坑',a1:'高中晚自习他总在客厅等我，茶几上热着一碗粥。他不开电视，就坐在那把藤椅上，台灯只开了半边。我推门进去的时候，他先看一眼挂钟再说"粥在桌上"。',a2:'我工作了，晚上十点他偶尔发一条语音，三秒钟，点开听，只有环境音。过一会儿又补了一个表情。',a3:'台灯的开关按钮被按得微微凹陷。灯泡换过一次，瓦数比原来小。',sentence:'那盏灯的开关，被他按出了一个坑。',product:'护眼台灯',price:'¥129-299'},
+{id:20,cat:'等待型',snum:2,img:{a1:'等待型/story2_act1_rain',a2:'等待型/story2_act2_night',a3:'等待型/story2_act3_speaker'},title1:'智能音箱',title2:'叫醒它，不说话',a1:'下雨天他没带伞，在校门口等了我四十分钟。他穿着雨衣，雨衣帽子没戴，头发贴在额头上。他看见我出来，把书包接过去说"走吧"。',a2:'他学会了用智能音箱听戏曲。有时候他对着音箱反复说"播放"、"暂停"，像是在跟谁说话。音箱偶尔误唤醒，他会对着它说"没事，没事"。',a3:'智能音箱的唤醒记录里，有一些半夜的录音——只有环境声，没有人说话。',sentence:'他半夜叫醒音箱，又不说话。',product:'智能音箱',price:'¥199-499'},
+{id:21,cat:'等待型',snum:3,img:{a1:'等待型/story3_act1_phonebooth',a2:'等待型/story3_act2_bed',a3:'等待型/story3_act3_seniorphone'},title1:'老人手机',title2:'一个也没拨出去',a1:'他用IC卡电话亭给我打电话。电话亭的玻璃破了，风吹进来，他的声音在风里断断续续的。他说"钱够不够花"，握着话筒不挂，过了五秒钟才说"那挂了吧"。',a2:'我给他买了智能手机，他只会接电话和看微信。他发红包，我没领，消息就留在聊天框里。有时候他半夜点亮手机屏幕，看了一会儿锁屏，又放下。',a3:'手机通讯录置顶了三个人。通话记录里没有拨出的电话。',sentence:'他的通讯录置顶了三个人，一个也没拨出去。',product:'老人手机',price:'¥299-599'},
+{id:22,cat:'转身型',snum:1,img:{a1:'转身型/story1_act1_cross',a2:'转身型/story1_act2_hospital',a3:'转身型/story1_act3_band'},title1:'手环',title2:'跟每个护士都说',a1:'他牵着我的手过马路。绿灯还剩几秒，他攥紧我的手跑过去。他的手大，能把我的整个拳头包住。',a2:'他住院那年，我给他买了一个智能手环。他嫌戴着不舒服，第一天就摘了放在床头柜上。护士来量心率的时候，他说"我儿子买了个手表，能测心跳"。',a3:'手环放在床头柜抽屉里，屏幕还亮着，显示心率72。',sentence:'他把手环放在抽屉里，但跟每个护士都说"我儿子买的"。',product:'智能手环',price:'¥199-399'},
+{id:23,cat:'转身型',snum:2,img:{a1:'转身型/story2_act1_clinic',a2:'转身型/story2_act2_papers',a3:'转身型/story2_act3_report'},title1:'体检套餐',title2:'他说"没事"',a1:'我小时候生病，他背我去镇上的诊所。医生说要打针，他按住我的肩膀说"不疼"。他的手压得很紧。',a2:'今年体检报告出来，三个红色箭头。他自己看了一遍，把报告折起来放进抽屉。我问他怎么样，他说"没事，小问题"。',a3:'体检单放在床头柜第二层，上面的折痕已经被抚平了。',sentence:'他说"没事"的时候，抽屉里的体检报告折了三道。',product:'体检套餐',price:'¥499-1,999'},
+{id:24,cat:'转身型',snum:3,img:{a1:'转身型/story3_act1_door',a2:'转身型/story3_act2_er',a3:'转身型/story3_act3_policy'},title1:'保险',title2:'第一次觉得他老了',a1:'他跟我说"保险都是骗人的"。邻居来推销，他关上门。我说万一出事了怎么办，他说"能出什么事"。',a2:'凌晨两点他心梗住院。我赶到医院的时候，他在急诊室吸氧。我签字的时候，笔尖在纸面上抖。',a3:'我买的那份保险单复印件，放在他床头柜的抽屉里。他从来没打开过。',sentence:'那次他在病床上看着我，是我第一次觉得他老了。',product:'健康保险',price:'¥999/年起'}
+];
+
+// ═══════════════ MOCK DATA ═══════════════
+var MOCK_COMMENTS = [
+  {nick:'会飞的鱼',text:'看哭了。我爸也是这样，什么都不说。'},{nick:'小太阳',text:'我爸爸也是手艺人，现在眼神不行了。'},{nick:'远方的风',text:'想家了，这个周末就回去。'},{nick:'南城旧事',text:'我爸的保温杯也用了几十年。'},{nick:'春天里',text:'看到第二个故事就忍不住了。'},{nick:'一颗橙子',text:'我爸把钓鱼竿放在阳台，从来没去过。'},{nick:'北方的狼',text:'厨房里的灯，凌晨四点就亮了。'},{nick:'夏天的尾巴',text:'爸爸的背影，转过身才知道老了。'},{nick:'爱吃榴莲',text:'我下班再晚，客厅的灯都亮着。'},{nick:'陌上花开',text:'沉默的人爱得最深。'}
+];
+var MOCK_MESSAGES = [
+  {nick:'小雨',cat:'等待型',text:'爸爸在车站等了我三个小时，下车的时候他笑着说：我就知道你会来。'},{nick:'阿蒙',cat:'肩背型',text:'小时候骑在爸爸肩上逛庙会，现在他的肩膀塌了，但在我心中永远那么宽。'},{nick:'林深时见鹿',cat:'沉默型',text:'我爸从不说爱我，但每次回家冰箱都是满的。'},{nick:'老王隔壁',cat:'厨房型',text:'爸爸的红烧肉配方我学会了，但始终做不出那个味道。'},{nick:'长安一片月',cat:'让步型',text:'他放弃了很多，只为让我飞得更远。'},{nick:'爱吃面',cat:'手艺型',text:'爸爸用那双手给我做了几十年饭，现在筷子都拿不稳了。'},{nick:'追风筝',cat:'转身型',text:'他的背影越来越小，但我一转头，他还在。'},{nick:'海边小屋',cat:'接送型',text:'每天清晨六点，他骑车载我上学，风雨无阻。'}
+];
+
+// ═══════════════ APP STATE ═══════════════
+var state = {page:'home',storyId:null,catFilter:null,scrollY:0};
+
+// ═══════════════ HELPERS ═══════════════
+function $(id){return document.getElementById(id);}
+function imgPath(s,act){var k=s.img[act];return IMAGES[k]||('assets/images/types/'+k+'.png');}
+function getStory(id){return STORIES.find(function(s){return s.id===id;});}
+function storiesByCat(cat){return STORIES.filter(function(s){return s.cat===cat;});}
+function shuffle(a){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t;}return b;}
+function showToast(msg){var t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(function(){t.classList.remove('show');},2000);}
+var navTimer=null;
+function navigateTo(page){
+  var oldPage = document.querySelector('.page.active');
+  var newPage = $('page-'+page);
+  if (!newPage || newPage === oldPage) return;
+  clearTimeout(navTimer);
+  state.page = page;
+  if (oldPage) {
+    oldPage.classList.add('page-leaving');
+    oldPage.classList.remove('active');
+    setTimeout(function(){ oldPage.classList.remove('page-leaving'); }, 400);
+  }
+  newPage.classList.add('page-entering');
+  navTimer = setTimeout(function(){
+    newPage.classList.remove('page-entering');
+    newPage.classList.add('active');
+    window.scrollTo(0, 0);
+  }, 500);
+}
+function backToHome(){navigateTo('home');setTimeout(function(){window.scrollTo(0,state.scrollY||0);},550);}
+
+// ═══════════════ P1 HOME ═══════════════
+function renderFilters(){
+  var h='<div class="filter-chip active" data-cat="" onclick="filterBy(null)">全部<span class="chip-count">24</span></div>';
+  CATEGORIES.forEach(function(c){h+='<div class="filter-chip" data-cat="'+c.id+'" onclick="filterBy(&quot;'+c.id+'&quot;)">'+c.name+'<span class="chip-count">'+storiesByCat(c.id).length+'</span></div>';});
+  $('filter-bar').innerHTML=h;
+}
+function filterBy(cat){
+  state.catFilter=cat;
+  document.querySelectorAll('.filter-chip').forEach(function(c){c.classList.toggle('active',c.getAttribute('data-cat')===cat||(cat===null&&c.getAttribute('data-cat')===''));});
+  var cards = document.querySelectorAll('.story-card');
+  if (cards.length === 0) { renderCards(); return; }
+  cards.forEach(function(card){ card.classList.add('card-fade-out'); });
+  setTimeout(function(){ renderCards(); }, 300);
+}
+function renderCards(){
+  var list=state.catFilter?storiesByCat(state.catFilter):STORIES,h='';
+  list.forEach(function(s,i){
+    h+='<div class="story-card scroll-reveal story-card-enter" onclick="openStory('+s.id+')" style="animation-delay:'+(i*0.08)+'s">';
+    h+='<img class="card-thumb" src="'+imgPath(s,'a1')+'" alt="" loading="lazy" onerror="this.style.background=\'linear-gradient(135deg,#F5E6D3,#D4A574)\'">';
+    h+='<div class="card-body"><div class="card-category">'+s.cat+' · 故事'+s.snum+'</div><div class="card-title">'+s.title1+'</div>';
+    h+='<div class="card-summary">'+s.a1.substring(0,44)+'…</div><div class="card-emotion">"'+s.sentence+'"</div></div></div>';
+  });
+  $('story-cards').innerHTML=h||'<p style="text-align:center;color:#bbb;padding:40px;">暂无故事</p>';
+  setTimeout(observeReveal,50);
+}
+
+// ═══════════════ P2 DETAIL ═══════════════
+function openStory(id){state.storyId=id;state.scrollY=window.scrollY;try{sessionStorage.setItem('p1-scroll',state.scrollY);}catch(e){}navigateTo('detail');renderDetail(id);}
+function renderDetail(id){
+  var s=getStory(id),ds=$('detail-screen'),db=$('detail-bottom'),h='';
+  h+='<section class="detail-act"><img class="detail-act-bg" src="'+imgPath(s,'a1')+'" alt="" onerror="this.parentElement.style.background=\'linear-gradient(135deg,#3E2723,#8B6914)\'"><div class="detail-act-gradient"></div><div class="detail-act-watercolor"></div><div class="detail-act-content"><div class="detail-act-label">第一幕 · 童年记忆</div><h2 class="detail-act-title">'+s.title1+'</h2><p class="detail-act-text">'+s.a1+'</p></div></section>';
+  h+='<section class="detail-act"><img class="detail-act-bg" src="'+imgPath(s,'a2')+'" alt="" onerror="this.parentElement.style.background=\'linear-gradient(135deg,#3E2723,#8B6914)\'"><div class="detail-act-gradient"></div><div class="detail-act-watercolor" style="animation-delay:0.35s"></div><div class="detail-act-content"><div class="detail-act-label">第二幕 · 现在的变化</div><h2 class="detail-act-title">'+s.title2+'</h2><p class="detail-act-text">'+s.a2+'</p></div></section>';
+  h+='<section class="detail-act3-obj"><img class="act3-obj-img" src="'+imgPath(s,'a3')+'" alt="" onerror="this.style.background=\'linear-gradient(135deg,#F5E6D3,#D4A574);width:220px;height:220px;border-radius:20px\'"><p class="act3-obj-text">'+s.a3+'</p><p class="act3-sentence">'+s.sentence+'</p><button class="act3-expand-btn" onclick="openExpand('+s.id+')">替我也送一份 ↓</button></section>';
+  ds.innerHTML=h;
+
+  var related=shuffle(storiesByCat(s.cat).filter(function(r){return r.id!==s.id;}));
+  var others=shuffle(STORIES.filter(function(r){return r.cat!==s.cat;}));
+  related=related.concat(others).slice(0,6);
+
+  var bottom='<h4>留言</h4>';
+  shuffle(MOCK_COMMENTS.slice()).slice(0,3).forEach(function(c){bottom+='<div class="comment-item"><div class="comment-nick">'+c.nick+'</div><div class="comment-text">'+c.text+'</div></div>';});
+  bottom+='<h4 style="margin-top:28px;">相关故事</h4><div class="related-scroll">';
+  related.forEach(function(r){bottom+='<div class="related-card" onclick="openStory('+r.id+')"><img class="related-card-img" src="'+imgPath(r,'a1')+'" alt="" loading="lazy" onerror="this.style.background=\'linear-gradient(135deg,#F5E6D3,#D4A574)\'"><div class="related-card-title">'+r.title1+'</div></div>';});
+  bottom+='</div><div class="share-btn-row"><button class="share-btn" onclick="openShare('+s.id+')">分享这个故事</button></div>';
+  db.innerHTML=bottom;
+  window.scrollTo(0,0);
+  setTimeout(observeReveal,50);
+}
+
+// ═══════════════ EXPAND LAYER ═══════════════
+function openExpand(id){
+  var s=getStory(id);
+  $('expand-panel').innerHTML='<button class="expand-close" onclick="closeExpand()">×</button><img class="expand-obj-img" src="'+imgPath(s,'a3')+'" alt="" onerror="this.style.background=\'linear-gradient(135deg,#F5E6D3,#D4A574);width:160px;height:160px;border-radius:16px;margin:0 auto 20px;display:block\'"><p class="expand-sentence">"'+s.sentence+'"</p><p class="expand-price">'+s.price+'</p><button class="expand-jd-btn" onclick="window.open(\'https://www.jd.com\',\'_blank\');closeExpand();">去京东看看</button>';
+  $('expand-overlay').classList.add('active');
+  document.body.style.overflow='hidden';
+}
+function closeExpand(){$('expand-overlay').classList.remove('active');document.body.style.overflow='';}
+
+// ═══════════════ P3 MESSAGE WALL ═══════════════
+function openMessages(){navigateTo('messages');renderMessages();}
+function renderMessages(){
+  var h='';shuffle(MOCK_MESSAGES.slice()).forEach(function(m){h+='<div class="msg-card"><div class="msg-tag">#'+m.cat+'</div><div class="msg-text">'+m.text+'</div><div class="msg-from">— '+m.nick+'</div></div>';});
+  $('waterfall').innerHTML=h;
+}
+
+// ═══════════════ P4 UGC FORM ═══════════════
+var selectedUgcCat=null;
+function openUGC(){navigateTo('ugc');renderUgcCats();$('submit-success').classList.remove('active');$('ugc-act1').value='';$('ugc-act2').value='';$('ugc-act3').value='';$('ugc-nick').value='';selectedUgcCat=null;}
+function renderUgcCats(){var h='';CATEGORIES.forEach(function(c){h+='<div class="cat-option" data-cat="'+c.id+'" onclick="selectUgcCat(&quot;'+c.id+'&quot;,this)">'+c.name+'</div>';});$('cat-selector').innerHTML=h;}
+function selectUgcCat(cat,el){selectedUgcCat=cat;document.querySelectorAll('.cat-option').forEach(function(o){o.classList.remove('selected');});el.classList.add('selected');}
+function submitUGC(){
+  var a1=$('ugc-act1').value.trim(),a2=$('ugc-act2').value.trim(),a3=$('ugc-act3').value.trim(),nick=$('ugc-nick').value.trim();
+  if(!a1&&!a2&&!a3){showToast('请至少填写一段回忆');return;}if(!nick){showToast('请输入昵称');return;}
+  $('submit-success').classList.add('active');
+  $('ugc-act1').value='';$('ugc-act2').value='';$('ugc-act3').value='';$('ugc-nick').value='';
+  document.querySelectorAll('.cat-option').forEach(function(o){o.classList.remove('selected');});selectedUgcCat=null;
+  setTimeout(function(){$('submit-success').classList.remove('active');},3000);
+  showToast('你的故事已收到');
+}
+
+// ═══════════════ P5 SHARE CARD ═══════════════
+function openShare(id){
+  var s=getStory(id);
+  if(!s){showToast('故事不存在');return;}
+  $('share-img').src=imgPath(s,'a1');
+  $('share-img').onerror=function(){this.style.background='linear-gradient(135deg,#F5E6D3,#D4A574)';};
+  $('share-title').textContent=s.title1;
+  $('share-desc').textContent=s.sentence;
+  $('share-card').dataset.storyId=id;
+  $('share-overlay').classList.add('active');
+  document.body.style.overflow='hidden';
+}
+function closeShare(e){
+  if(e&&e.target.closest&&e.target.closest('.share-card')&&!e.target.closest('.share-close-btn'))return;
+  $('share-overlay').classList.remove('active');
+  document.body.style.overflow='';
+}
+function saveShareCard(){
+  showToast('长按卡片即可保存图片');
+}
+function shareToFriend(){
+  var s=getStory(parseInt($('share-card').dataset.storyId));
+  if(!s)return;
+  if(navigator.share){navigator.share({title:s.title1,text:s.sentence,url:location.href}).catch(function(){});}
+  else{navigator.clipboard.writeText(s.title1+' — '+s.sentence).then(function(){showToast('已复制到剪贴板');}).catch(function(){showToast('分享链接: '+location.href);});}
+}
+
+// ═══════════════ COUNTERS ═══════════════
+var counterIntervals = [], countersAnimated = false;
+function simCounters(){
+  counterIntervals.push(setInterval(function(){var v=$('counter-views');if(v)v.textContent=String(parseInt(v.textContent.replace(/,/g,''))+Math.floor(Math.random()*7)+1).replace(/\B(?=(\d{3})+(?!\d))/g,',');},8000));
+  counterIntervals.push(setInterval(function(){var v=$('counter-messages');if(v)v.textContent=String(parseInt(v.textContent.replace(/,/g,''))+Math.floor(Math.random()*3)).replace(/\B(?=(\d{3})+(?!\d))/g,',');},12000));
+}
+function stopCounters(){counterIntervals.forEach(function(id){clearInterval(id);});counterIntervals=[];}
+function startCounters(){if(counterIntervals.length===0)simCounters();}
+
+function animateCounters(){
+  var nums = document.querySelectorAll('.data-num[data-target]');
+  nums.forEach(function(el){
+    var target = parseInt(el.getAttribute('data-target'));
+    var isFormatted = el.id === 'counter-views' || el.id === 'counter-messages';
+    var duration = Math.min(Math.max(target / 50, 600), 2000);
+    var start = performance.now();
+    function step(ts){
+      var p = Math.min((ts - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - p, 3);
+      var val = Math.round(target * eased);
+      el.textContent = isFormatted ? String(val).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : String(val);
+      if (p < 1) requestAnimationFrame(step);
+      else {
+        el.textContent = isFormatted ? String(target).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : String(target);
+        countersAnimated = true;
+      }
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+var counterObserver = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if (e.isIntersecting && !countersAnimated) { animateCounters(); startCounters(); counterObserver.unobserve(e.target); }
+  });
+}, {threshold: 0.3});
+setTimeout(function(){
+  var dw = document.querySelector('.data-wall');
+  if (dw) counterObserver.observe(dw);
+}, 200);
+
+// ═══════════════ EVENT BINDINGS ═══════════════
+$('btn-write-story').addEventListener('click',openUGC);
+$('btn-message-wall').addEventListener('click',openMessages);
+$('btn-back-detail').addEventListener('click',backToHome);
+$('btn-back-messages').addEventListener('click',backToHome);
+$('btn-back-ugc').addEventListener('click',backToHome);
+$('btn-submit-ugc').addEventListener('click',submitUGC);
+$('expand-overlay').addEventListener('click',function(e){if(e.target===this)closeExpand();});
+$('share-overlay').addEventListener('click',closeShare);
+
+// ═══════════════ SCROLL REVEAL ═══════════════
+var revealObserver=new IntersectionObserver(function(entries){
+  entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');revealObserver.unobserve(e.target);}});
+},{threshold:0.12,rootMargin:'0px 0px -20px 0px'});
+function observeReveal(){document.querySelectorAll('.scroll-reveal:not(.visible)').forEach(function(el){revealObserver.observe(el);});}
+
+// ═══════════════ INIT ═══════════════
+renderFilters();renderCards();observeReveal();
+try{var sy=sessionStorage.getItem('p1-scroll');if(sy){state.scrollY=parseInt(sy);window.scrollTo(0,state.scrollY);}}catch(e){}
+document.addEventListener('scroll',function(){if(state.page==='home')state.scrollY=window.scrollY;},{passive:true});
+</script>
+</body>
+</html>
